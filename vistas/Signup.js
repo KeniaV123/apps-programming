@@ -1,14 +1,54 @@
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
 import { Input, NativeBaseProvider, Button, Icon, Box, Image, AspectRatio } from 'native-base';
 import { FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { alignContent, flex, flexDirection, width } from 'styled-system';
+// import { alignContent, flex, flexDirection, width } from 'styled-system';
+
+import {getAuth, createUserWithEmailAndPassword} from "firebase/auth";
+import {initializeApp} from "firebase/app";
+import {firebaseConfig} from "../config/firebase";
+import {getFirestore, collection, addDoc} from "firebase/firestore";
+
 
 
 function Signup() {
     const navigation = useNavigation();
+
+    const [username, setUsername] = React.useState("");
+    const [email, setEmail] = React.useState("");
+    const [password, setPassword] = React.useState("");
+    const [passwordConfirmation, setPasswordConfirmation] = React.useState('');
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const handleSingUp = async() => {
+
+      if(password !== passwordConfirmation) return Alert.alert('Error', 'Las contraseñas ingresadas no coinciden.')
+      createUserWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        console.log('SignUp ready!');
+        const user = userCredential.user;
+        console.log(user);
+        Alert.alert('¡Usuario registrado con éxito!');
+        navigation.navigate('Login');
+      })
+      .catch((error) => {
+        console.log(error);
+      })
+
+      await addDoc(collection(db, 'Users'),{
+        username: username,
+        email: email,
+        password: password,
+        // passwordConfirmation: passwordConfirmation,
+      })
+    }
+
+   
   return (
     <View style={styles.container}>
       <View style={styles.Middle}>
@@ -19,11 +59,14 @@ function Signup() {
         <TouchableOpacity onPress={() => navigation.navigate("Login")} ><Text style={styles.signupText}> Inicia sesión </Text></TouchableOpacity>
       </View>
 
-      {/* Username or Email Input Field */}
+      {/* Username Input Field */}
       <View style={styles.buttonStyle}>
         
         <View style={styles.emailInput}>
           <Input
+           onChangeText={(text) => setUsername(text)}
+           value={username}
+
             InputLeftElement={
               <Icon
                 as={<FontAwesome5 name="user-secret" />}
@@ -50,11 +93,14 @@ function Signup() {
         </View>
       </View>
 
-      {/* Username or Email Input Field */}
+      {/* Email Input Field */}
       <View style={styles.buttonStyleX}>
         
         <View style={styles.emailInput}>
           <Input
+            onChangeText={(text) => setEmail(text)}
+            value={email}
+            autoCapitalize= 'none'
             InputLeftElement={
               <Icon
                 as={<MaterialCommunityIcons name="email" />}
@@ -86,6 +132,8 @@ function Signup() {
         
         <View style={styles.emailInput}>
           <Input
+            onChangeText={(text) => setPassword(text)}
+            value={password}
             InputLeftElement={
               <Icon
                 as={<FontAwesome5 name="key" />}
@@ -112,11 +160,13 @@ function Signup() {
         </View>
       </View>
 
-      {/* Password Input Field */}
+      {/* Password Confirmation*/}
       <View style={styles.buttonStyleX}>
         
         <View style={styles.emailInput}>
-          <Input
+          <Input 
+            onChangeText={(text) => setPasswordConfirmation(text)}
+            value={passwordConfirmation}
             InputLeftElement={
               <Icon
                 as={<FontAwesome5 name="key" />}
@@ -145,10 +195,11 @@ function Signup() {
 
       {/* Button */}
       <View style={styles.buttonStyle}>
-        <Button style={styles.buttonDesign}>
+        <Button onPress={handleSingUp} style={styles.buttonDesign}>
             ¡Registrar ahora!
         </Button>
       </View>
+
 
       {/* Line */}
       <View style={styles.lineStyle}>
